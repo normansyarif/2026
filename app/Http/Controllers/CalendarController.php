@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DailyCompletionStatus;
 use App\Models\Todo;
 use App\Models\TodoLog;
 use App\Models\WeightLog;
 use App\Models\WeightLossGoal;
+use App\Services\DailyCompletionService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +17,10 @@ use Illuminate\View\View;
 
 class CalendarController extends Controller
 {
+    public function __construct(private readonly DailyCompletionService $dailyCompletionService)
+    {
+    }
+
     public function index(Request $request): View
     {
         $month = $this->resolveMonth($request->query('month'));
@@ -62,9 +68,13 @@ class CalendarController extends Controller
         $weightGoal = WeightLossGoal::query()
             ->whereDate('month', $monthStart->toDateString())
             ->first();
+        $storedStatuses = DailyCompletionStatus::query()
+            ->whereBetween('tracked_for', [$monthStart->toDateString(), $monthEnd->toDateString()])
+            ->get()
+            ->keyBy(fn (DailyCompletionStatus $status) => $status->tracked_for->toDateString());
 
         $days = collect(range(1, $monthStart->daysInMonth))
-            ->map(function (int $day) use ($monthStart, $today, $activeHabits, $habitLogsByDate, $weightLogsByDate, $weightGoal) {
+            ->map(function (int $day) use ($monthStart, $today, $activeHabits, $habitLogsByDate, $weightLogsByDate, $weightGoal, $storedStatuses) {
                 $date = $monthStart->copy()->day($day);
                 $dateKey = $date->toDateString();
                 $targetWeight = $weightGoal ? $this->projectedWeightForDate($weightGoal, $date) : null;
@@ -95,6 +105,12 @@ class CalendarController extends Controller
                             'habits' => [],
                         ],
                     ];
+                }
+
+                $storedStatus = $storedStatuses->get($dateKey);
+
+                if ($storedStatus) {
+                    return $this->dayFromStoredStatus($storedStatus, $date);
                 }
 
                 $weekdayKey = strtolower($date->englishDayOfWeek);
@@ -172,6 +188,57 @@ class CalendarController extends Controller
             'leadingBlankDays' => $monthStart->dayOfWeekIso - 1,
             'days' => $days,
             'weekdays' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        ];
+    }
+
+    private function dayFromStoredStatus(DailyCompletionStatus $storedStatus, CarbonInterface $date): array
+    {
+        $targetWeight = is_null($storedStatus->target_weight) ? null : (float) $storedStatus->target_weight;
+        $rollingAverageWeight = is_null($storedStatus->rolling_average_weight) ? null : (float) $storedStatus->rolling_average_weight;
+        $habitSnapshot = collect($storedStatus->habit_snapshot ?? []);
+        $statusLabel = $storedStatus->state === 'complete' ? 'Finished' : 'Incomplete';
+        $completedHabitCount = (int) $storedStatus->completed_habit_count;
+        $scheduledHabitCount = (int) $storedStatus->scheduled_habit_count;
+        $weightSummary = $targetWeight === null
+            ? 'No monthly weight target set.'
+            : ($rollingAverageWeight === null
+                ? 'No rolling-average weight logged. Target: '.WeightLossGoal::formatWeight($targetWeight).' kg'
+                : 'Avg '.WeightLossGoal::formatWeight($rollingAverageWeight).' kg vs target '.WeightLossGoal::formatWeight($targetWeight).' kg');
+
+        return [
+            'date' => $date->toDateString(),
+            'date_label' => $date->format('D, M j, Y'),
+            'day_number' => $date->day,
+            'state' => $storedStatus->state,
+            'state_class' => $storedStatus->state === 'complete' ? 'is-complete' : 'is-missed',
+            'status_label' => $statusLabel,
+            'weight_label' => $rollingAverageWeight !== null
+                ? 'Avg '.WeightLossGoal::formatWeight($rollingAverageWeight).' kg'
+                : 'No weight log',
+            'habit_label' => 'Habits '.$completedHabitCount.'/'.$scheduledHabitCount,
+            'tooltip' => $this->dayTooltip(
+                $storedStatus->state === 'complete',
+                $targetWeight,
+                $rollingAverageWeight,
+                $completedHabitCount,
+                $scheduledHabitCount
+            ),
+            'is_today' => $date->isSameDay(now()->startOfDay()),
+            'details' => [
+                'date_label' => $date->format('D, M j, Y'),
+                'status_label' => $statusLabel,
+                'weight_summary' => $weightSummary,
+                'habit_summary' => $scheduledHabitCount === 0
+                    ? 'No habits were scheduled for this day.'
+                    : 'Completed '.$completedHabitCount.' of '.$scheduledHabitCount.' scheduled habits.',
+                'habits' => $habitSnapshot->map(function (array $habit) {
+                    return [
+                        'name' => $habit['name'] ?? 'Habit',
+                        'status' => $habit['status'] ?? 'Incomplete',
+                        'value' => $habit['value'] ?? 'No log',
+                    ];
+                })->all(),
+            ],
         ];
     }
 

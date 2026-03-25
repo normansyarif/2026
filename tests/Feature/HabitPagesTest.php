@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AppSetting;
+use App\Models\DailyCompletionStatus;
 use App\Models\Todo;
 use App\Models\TodoLog;
 use App\Models\Goal;
@@ -615,6 +616,58 @@ class HabitPagesTest extends TestCase
 
         $this->assertNotNull($todayLog);
         $this->assertSame('84', WeightLossGoal::formatWeight($todayLog->rolling_average_weight));
+    }
+
+    public function test_stored_daily_completion_status_survives_later_habit_schedule_changes(): void
+    {
+        $today = now()->startOfDay();
+        $todayKey = strtolower($today->englishDayOfWeek);
+        $otherDay = $todayKey === 'monday' ? 'tuesday' : 'monday';
+
+        WeightLossGoal::query()->create([
+            'month' => $today->copy()->startOfMonth()->toDateString(),
+            'starting_weight' => 90,
+            'goal_weight' => 84,
+        ]);
+
+        WeightLog::query()->create([
+            'logged_for' => $today->toDateString(),
+            'weight' => 84,
+            'rolling_average_weight' => 84,
+        ]);
+
+        $habit = Todo::query()->create([
+            'name' => 'Walk',
+            'days_of_week' => [$todayKey],
+            'daily_goal' => 6000,
+            'unit' => 'step',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $this->post("/today/{$habit->id}/logs", [
+            'habit_id' => $habit->id,
+            'value' => 6000,
+        ])->assertRedirect('/today');
+
+        $storedStatus = DailyCompletionStatus::query()
+            ->whereDate('tracked_for', $today->toDateString())
+            ->first();
+
+        $this->assertNotNull($storedStatus);
+        $this->assertSame('complete', $storedStatus->state);
+        $this->assertSame(1, $storedStatus->scheduled_habit_count);
+
+        $habit->update([
+            'days_of_week' => [$otherDay],
+        ]);
+
+        $response = $this->get('/calendar');
+
+        $response->assertOk();
+        $response->assertSee('data-date="'.$today->toDateString().'"', false);
+        $response->assertSee('data-state="complete"', false);
+        $response->assertSee('Walk');
     }
 
     public function test_today_page_shows_weight_loss_section(): void

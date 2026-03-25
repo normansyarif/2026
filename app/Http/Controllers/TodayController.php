@@ -9,6 +9,7 @@ use App\Models\Todo;
 use App\Models\TodoLog;
 use App\Models\WeightLog;
 use App\Models\WeightLossGoal;
+use App\Services\DailyCompletionService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,10 @@ use Illuminate\View\View;
 
 class TodayController extends Controller
 {
+    public function __construct(private readonly DailyCompletionService $dailyCompletionService)
+    {
+    }
+
     public function index(): View
     {
         $today = now()->startOfDay();
@@ -110,6 +115,8 @@ class TodayController extends Controller
             ]
         );
 
+        $this->dailyCompletionService->syncForDate($loggedFor);
+
         $isToday = $loggedFor->isSameDay($today);
         $message = $completed
             ? $habit->name.' is marked complete for '.$this->entryLabel($loggedFor, $today).'.'
@@ -175,6 +182,8 @@ class TodayController extends Controller
         $log->update([
             'rolling_average_weight' => $rollingAverageWeight,
         ]);
+
+        $this->dailyCompletionService->syncForDate($today);
 
         $monthlyWeightGoals = WeightLossGoal::query()
             ->orderBy('month')
