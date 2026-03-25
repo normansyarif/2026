@@ -558,6 +558,7 @@
     @php
         $navItems = [
             ['route' => 'today.index', 'match' => 'today.*', 'kicker' => 'Daily', 'label' => 'Today'],
+            ['route' => 'calendar.index', 'match' => 'calendar.*', 'kicker' => 'Month', 'label' => 'Calendar'],
             ['route' => 'habits.index', 'match' => 'habits.*', 'kicker' => 'Manage', 'label' => 'Habits'],
             ['route' => 'goals.index', 'match' => 'goals.*', 'kicker' => 'Plan', 'label' => 'Goals'],
             ['route' => 'weight-loss.index', 'match' => 'weight-loss.*', 'kicker' => 'Health', 'label' => 'Weight Loss'],

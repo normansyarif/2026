@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\GoalMilestoneController;
 use App\Http\Controllers\HabitController;
@@ -20,6 +21,8 @@ Route::middleware('app.auth')->group(function () {
     Route::post('/today/{habit}/logs', [TodayController::class, 'store'])->name('today.logs.store');
     Route::post('/today/weight-logs', [TodayController::class, 'storeWeight'])->name('today.weight.store');
     Route::patch('/today/milestones/{milestone}/toggle', [TodayController::class, 'toggleMilestone'])->name('today.milestones.toggle');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::get('/calendar/month', [CalendarController::class, 'showMonth'])->name('calendar.month');
 
     Route::get('/habits', [HabitController::class, 'index'])->name('habits.index');
     Route::post('/habits', [HabitController::class, 'store'])->name('habits.store');

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AppSetting;
 use App\Models\Todo;
+use App\Models\TodoLog;
 use App\Models\Goal;
 use App\Models\GoalMilestone;
 use App\Models\WeightLog;
@@ -26,6 +27,7 @@ class HabitPagesTest extends TestCase
     public function test_pages_are_available(): void
     {
         $this->get('/today')->assertOk();
+        $this->get('/calendar')->assertOk();
         $this->get('/habits')->assertOk();
         $this->get('/goals')->assertOk();
         $this->get('/weight-loss')->assertOk();
@@ -498,6 +500,70 @@ class HabitPagesTest extends TestCase
         $response->assertSee('83 kg');
         $response->assertSee('81.5 kg');
         $response->assertSeeInOrder(['April 2026', 'May 2026']);
+    }
+
+    public function test_calendar_page_shows_day_completion_states(): void
+    {
+        $today = now()->startOfDay();
+        $tomorrow = $today->copy()->addDay();
+        $todayKey = strtolower($today->englishDayOfWeek);
+
+        Todo::query()->create([
+            'name' => 'Walk',
+            'days_of_week' => [$todayKey],
+            'daily_goal' => 6000,
+            'unit' => 'step',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        WeightLossGoal::query()->create([
+            'month' => $today->copy()->startOfMonth()->toDateString(),
+            'starting_weight' => 90,
+            'goal_weight' => 84,
+        ]);
+
+        TodoLog::query()->create([
+            'todo_id' => Todo::query()->first()->id,
+            'logged_for' => $today->toDateString(),
+            'value' => 6000,
+            'completed' => true,
+        ]);
+
+        WeightLog::query()->create([
+            'logged_for' => $today->toDateString(),
+            'weight' => 84,
+            'rolling_average_weight' => 84,
+        ]);
+
+        $response = $this->get('/calendar');
+
+        $response->assertOk();
+        $response->assertSee('Monthly completion');
+        $response->assertSee('data-calendar-day-button', false);
+        $response->assertSee('data-date="'.$today->toDateString().'"', false);
+        $response->assertSee('data-state="complete"', false);
+        $response->assertSee('Walk');
+        $response->assertSee('Completed');
+        $response->assertSee('data-date="'.$tomorrow->toDateString().'"', false);
+        $response->assertSee('data-state="future"', false);
+    }
+
+    public function test_calendar_month_can_be_loaded_over_ajax(): void
+    {
+        WeightLossGoal::query()->create([
+            'month' => '2026-04-01',
+            'starting_weight' => 90,
+            'goal_weight' => 88,
+        ]);
+
+        $response = $this->getJson('/calendar/month?month=2026-04');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('month', '2026-04');
+
+        $this->assertStringContainsString('April 2026', $response->json('html'));
     }
 
     public function test_logging_weight_returns_rolling_average_and_progress_data(): void
