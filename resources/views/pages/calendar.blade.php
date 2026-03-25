@@ -222,12 +222,6 @@
 @endpush
 
 @section('content')
-    <section class="card">
-        <div class="stack">
-            <h2>Monthly completion</h2>
-            <p>The day turns green when your rolling-average weight is on or under that day&apos;s target and every scheduled habit is complete. Past misses stay red, and future dates stay yellow.</p>
-        </div>
-    </section>
 
     <section class="card">
         <div data-month-calendar-container>
