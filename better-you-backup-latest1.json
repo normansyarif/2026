@@ -1,5 +1,5 @@
 {
-  "exportedAt" : "2026-04-26T03:04:22Z",
+  "exportedAt" : "2026-04-27T14:52:49Z",
   "goals" : [
     {
       "createdAt" : "2026-04-25T18:18:09Z",
@@ -15,7 +15,7 @@
       "habitID" : "00000000-0000-0000-0000-000000000005",
       "id" : "21D347F6-9B59-4075-9990-A07430E9C5BD",
       "loggedFor" : "2026-04-25T17:00:00Z",
-      "updatedAt" : "2026-04-25T18:34:10Z",
+      "updatedAt" : "2026-04-26T05:42:46Z",
       "value" : 0
     },
     {
@@ -24,7 +24,7 @@
       "habitID" : "00000000-0000-0000-0000-000000000007",
       "id" : "F3D48342-91ED-4757-A178-72467894A3ED",
       "loggedFor" : "2026-04-25T17:00:00Z",
-      "updatedAt" : "2026-04-25T19:11:59Z",
+      "updatedAt" : "2026-04-26T05:42:53Z",
       "value" : 0
     },
     {
@@ -33,8 +33,62 @@
       "habitID" : "00000000-0000-0000-0000-000000000001",
       "id" : "8D0E7B36-C2D7-4312-8087-2938611E9080",
       "loggedFor" : "2026-04-25T17:00:00Z",
-      "updatedAt" : "2026-04-25T19:04:58Z",
+      "updatedAt" : "2026-04-26T05:42:50Z",
       "value" : 0
+    },
+    {
+      "completed" : false,
+      "createdAt" : "2026-04-26T03:41:15Z",
+      "habitID" : "00000000-0000-0000-0000-000000000008",
+      "id" : "3F775720-0D90-45FE-AB02-032DAE81EFFC",
+      "loggedFor" : "2026-04-25T17:00:00Z",
+      "updatedAt" : "2026-04-26T11:12:47Z",
+      "value" : 0
+    },
+    {
+      "completed" : false,
+      "createdAt" : "2026-04-26T05:41:27Z",
+      "habitID" : "00000000-0000-0000-0000-000000000002",
+      "id" : "94A56DE7-8061-463C-9B02-A307A8B39F05",
+      "loggedFor" : "2026-04-25T17:00:00Z",
+      "updatedAt" : "2026-04-26T05:42:48Z",
+      "value" : 0
+    },
+    {
+      "completed" : false,
+      "createdAt" : "2026-04-26T05:41:34Z",
+      "habitID" : "00000000-0000-0000-0000-000000000006",
+      "id" : "E4CB11FB-64A3-4615-89B9-D8E5FA7FC634",
+      "loggedFor" : "2026-04-25T17:00:00Z",
+      "updatedAt" : "2026-04-26T05:42:42Z",
+      "value" : 0
+    },
+    {
+      "completed" : true,
+      "createdAt" : "2026-04-27T14:50:55Z",
+      "habitID" : "00000000-0000-0000-0000-000000000009",
+      "id" : "320626E6-F85D-48C2-8111-166E11DB4737",
+      "loggedFor" : "2026-04-26T17:00:00Z",
+      "updatedAt" : "2026-04-27T14:50:55Z",
+      "value" : 1
+    },
+    {
+      "completed" : true,
+      "createdAt" : "2026-04-27T14:50:57Z",
+      "habitID" : "00000000-0000-0000-0000-000000000002",
+      "id" : "8A07BF24-CAB5-4C7B-B958-687AF6FB7CB6",
+      "loggedFor" : "2026-04-26T17:00:00Z",
+      "updatedAt" : "2026-04-27T14:50:57Z",
+      "value" : 1
+    },
+    {
+      "completed" : true,
+      "createdAt" : "2026-04-27T14:51:00Z",
+      "habitID" : "00000000-0000-0000-0000-000000000005",
+      "id" : "832F2332-A6C1-4CE4-AA60-9BA2DF0058CD",
+      "loggedFor" : "2026-04-26T17:00:00Z",
+      "updatedAt" : "2026-04-27T14:51:00Z",
+      "value" : 2
     }
   ],
   "habits" : [
@@ -85,9 +139,10 @@
       "id" : "00000000-0000-0000-0000-000000000002",
       "isActive" : true,
       "name" : "Walk",
+      "reminderMinutes" : 1020,
       "sortOrder" : 5,
       "unit" : "count",
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "updatedAt" : "2026-04-27T14:49:24Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
@@ -98,9 +153,10 @@
       "id" : "00000000-0000-0000-0000-000000000008",
       "isActive" : true,
       "name" : "Do laundry",
+      "reminderMinutes" : 660,
       "sortOrder" : 2,
       "unit" : "count",
-      "updatedAt" : "2026-04-25T20:32:29Z"
+      "updatedAt" : "2026-04-27T14:50:34Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
@@ -117,9 +173,10 @@
       "id" : "00000000-0000-0000-0000-000000000001",
       "isActive" : true,
       "name" : "Practice piano",
+      "reminderMinutes" : 720,
       "sortOrder" : 4,
       "unit" : "count",
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "updatedAt" : "2026-04-27T14:49:13Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
@@ -343,99 +400,106 @@
   "settings" : {
     "id" : "1DD45642-6EBC-4128-A9F7-9AF78EA60637",
     "timelineDeadlineDate" : "2027-02-27T17:00:00Z",
-    "timelineStartDate" : "2026-04-25T17:00:00Z"
+    "timelineStartDate" : "2026-04-26T17:00:00Z"
   },
   "weightLogs" : [
-
+    {
+      "createdAt" : "2026-04-27T06:21:20Z",
+      "id" : "A61BBF8B-B703-4762-81E3-47F833065EAC",
+      "loggedFor" : "2026-04-26T17:00:00Z",
+      "rollingAverageWeight" : 106,
+      "updatedAt" : "2026-04-27T06:21:20Z",
+      "weight" : 106
+    }
   ],
   "weightPlans" : [
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 77,
+      "goalWeight" : 76.3,
       "id" : "1B24B302-F86D-4AD6-8C73-969AB53C8BD4",
       "month" : "2026-12-31T17:00:00Z",
-      "startingWeight" : 79.2,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 77.9,
+      "updatedAt" : "2026-04-26T05:37:39Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 95,
+      "goalWeight" : 95.5,
       "id" : "42669930-025D-497D-8559-EC941042A5A3",
       "month" : "2026-05-31T17:00:00Z",
-      "startingWeight" : 98.2,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 100,
+      "updatedAt" : "2026-04-26T05:34:56Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 92,
+      "goalWeight" : 91.5,
       "id" : "FBF8ECE1-33F0-410A-8EAD-CC56095E04A4",
       "month" : "2026-06-30T17:00:00Z",
-      "startingWeight" : 95,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 95.5,
+      "updatedAt" : "2026-04-26T05:35:20Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 101.5,
+      "goalWeight" : 105,
       "id" : "9B5DD707-9991-4DDC-A1B2-34D85DB73F79",
       "month" : "2026-03-31T17:00:00Z",
       "startingWeight" : 106,
-      "updatedAt" : "2026-04-25T18:56:22Z"
+      "updatedAt" : "2026-04-27T06:21:32Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
       "goalWeight" : 75,
       "id" : "B7C88B2A-E690-4826-8163-9260C3D7C867",
       "month" : "2027-01-31T17:00:00Z",
-      "startingWeight" : 77,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 76.3,
+      "updatedAt" : "2026-04-26T05:37:47Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 86.5,
+      "goalWeight" : 84.8,
       "id" : "9FAA737D-4B9A-4676-87C7-959180C1CA1C",
       "month" : "2026-08-31T17:00:00Z",
-      "startingWeight" : 89.2,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 87.9,
+      "updatedAt" : "2026-04-26T05:36:35Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 98.2,
+      "goalWeight" : 100,
       "id" : "192E8C7D-FE50-49E0-8DF7-244F284D0009",
       "month" : "2026-04-30T17:00:00Z",
-      "startingWeight" : 101.5,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 105,
+      "updatedAt" : "2026-04-26T05:34:39Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 81.5,
+      "goalWeight" : 79.8,
       "id" : "C690B080-6994-49DF-BCFA-6E0271DCC0F1",
       "month" : "2026-10-31T17:00:00Z",
-      "startingWeight" : 83.9,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 82.1,
+      "updatedAt" : "2026-04-26T05:37:09Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 79.2,
+      "goalWeight" : 77.9,
       "id" : "76CA1233-DAAD-4E2F-9620-15028ED8BC8F",
       "month" : "2026-11-30T17:00:00Z",
-      "startingWeight" : 81.5,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 79.8,
+      "updatedAt" : "2026-04-26T05:37:24Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 83.9,
+      "goalWeight" : 82.1,
       "id" : "49E17E13-1E82-40C7-8248-996D73B6AE72",
       "month" : "2026-09-30T17:00:00Z",
-      "startingWeight" : 86.5,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 84.8,
+      "updatedAt" : "2026-04-26T05:36:51Z"
     },
     {
       "createdAt" : "2026-04-25T18:18:09Z",
-      "goalWeight" : 89.2,
+      "goalWeight" : 87.9,
       "id" : "1569E2DE-5D92-47F9-BD1F-64CA3A582D41",
       "month" : "2026-07-31T17:00:00Z",
-      "startingWeight" : 92,
-      "updatedAt" : "2026-04-25T18:18:09Z"
+      "startingWeight" : 91.5,
+      "updatedAt" : "2026-04-26T05:36:11Z"
     }
   ]
 }

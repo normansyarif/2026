@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 import UniformTypeIdentifiers
 
 struct DayStatus: Identifiable {
@@ -165,6 +166,75 @@ enum DataStore {
     }
 }
 
+enum HabitNotificationScheduler {
+    private static let identifierPrefix = "habit-reminder-"
+
+    static func sync(habit: Habit) {
+        remove(habitID: habit.id)
+
+        guard habit.isActive,
+              let reminderMinutes = habit.reminderMinutes
+        else { return }
+
+        let habitID = habit.id
+        let habitName = habit.name
+        let habitDays = habit.days
+
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { isGranted, _ in
+            guard isGranted else { return }
+
+            for day in habitDays {
+                guard let weekday = Weekday(rawValue: day) else { continue }
+                let content = UNMutableNotificationContent()
+                content.title = habitName
+                content.body = "Time for \(habitName)."
+                content.sound = .default
+
+                var dateComponents = DateComponents()
+                dateComponents.calendar = Calendar(identifier: .gregorian)
+                dateComponents.weekday = weekday.calendarWeekday
+                dateComponents.hour = reminderMinutes / 60
+                dateComponents.minute = reminderMinutes % 60
+
+                let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+                let request = UNNotificationRequest(
+                    identifier: notificationID(habitID: habitID, weekday: weekday),
+                    content: content,
+                    trigger: trigger
+                )
+                UNUserNotificationCenter.current().add(request)
+            }
+        }
+    }
+
+    static func syncAll(habits: [Habit]) {
+        habits.forEach(sync)
+    }
+
+    static func remove(habitID: UUID) {
+        let identifiers = Weekday.allCases.map { notificationID(habitID: habitID, weekday: $0) }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
+
+    private static func notificationID(habitID: UUID, weekday: Weekday) -> String {
+        "\(identifierPrefix)\(habitID.uuidString)-\(weekday.rawValue)"
+    }
+}
+
+private extension Weekday {
+    var calendarWeekday: Int {
+        switch self {
+        case .sunday: 1
+        case .monday: 2
+        case .tuesday: 3
+        case .wednesday: 4
+        case .thursday: 5
+        case .friday: 6
+        case .saturday: 7
+        }
+    }
+}
+
 struct BackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
     var data: Data
@@ -193,7 +263,7 @@ struct BackupEnvelope: Codable {
     var settings: SettingsRecord?
 }
 
-struct HabitRecord: Codable { var id: UUID; var name: String; var days: [String]; var dailyGoal: Double; var unit: String; var sortOrder: Int; var isActive: Bool; var createdAt: Date; var updatedAt: Date }
+struct HabitRecord: Codable { var id: UUID; var name: String; var days: [String]; var dailyGoal: Double; var unit: String; var sortOrder: Int; var isActive: Bool; var reminderMinutes: Int?; var createdAt: Date; var updatedAt: Date }
 struct HabitLogRecord: Codable { var id: UUID; var habitID: UUID; var loggedFor: Date; var value: Double; var completed: Bool; var createdAt: Date; var updatedAt: Date }
 struct WeightPlanRecord: Codable { var id: UUID; var month: Date; var startingWeight: Double; var goalWeight: Double; var createdAt: Date; var updatedAt: Date }
 struct WeightLogRecord: Codable { var id: UUID; var loggedFor: Date; var weight: Double; var rollingAverageWeight: Double; var createdAt: Date; var updatedAt: Date }
@@ -205,7 +275,7 @@ enum BackupService {
     static func exportData(context: ModelContext) throws -> Data {
         let envelope = BackupEnvelope(
             exportedAt: Date(),
-            habits: try context.fetch(FetchDescriptor<Habit>()).map { HabitRecord(id: $0.id, name: $0.name, days: $0.days, dailyGoal: $0.dailyGoal, unit: $0.unit, sortOrder: $0.sortOrder, isActive: $0.isActive, createdAt: $0.createdAt, updatedAt: $0.updatedAt) },
+            habits: try context.fetch(FetchDescriptor<Habit>()).map { HabitRecord(id: $0.id, name: $0.name, days: $0.days, dailyGoal: $0.dailyGoal, unit: $0.unit, sortOrder: $0.sortOrder, isActive: $0.isActive, reminderMinutes: $0.reminderMinutes, createdAt: $0.createdAt, updatedAt: $0.updatedAt) },
             habitLogs: try context.fetch(FetchDescriptor<HabitLog>()).map { HabitLogRecord(id: $0.id, habitID: $0.habitID, loggedFor: $0.loggedFor, value: $0.value, completed: $0.completed, createdAt: $0.createdAt, updatedAt: $0.updatedAt) },
             weightPlans: try context.fetch(FetchDescriptor<WeightLossPlan>()).map { WeightPlanRecord(id: $0.id, month: $0.month, startingWeight: $0.startingWeight, goalWeight: $0.goalWeight, createdAt: $0.createdAt, updatedAt: $0.updatedAt) },
             weightLogs: try context.fetch(FetchDescriptor<WeightLog>()).map { WeightLogRecord(id: $0.id, loggedFor: $0.loggedFor, weight: $0.weight, rollingAverageWeight: $0.rollingAverageWeight, createdAt: $0.createdAt, updatedAt: $0.updatedAt) },
@@ -224,6 +294,9 @@ enum BackupService {
         decoder.dateDecodingStrategy = .iso8601
         let envelope = try decoder.decode(BackupEnvelope.self, from: data)
 
+        for habit in try context.fetch(FetchDescriptor<Habit>()) {
+            HabitNotificationScheduler.remove(habitID: habit.id)
+        }
         try deleteAll(Habit.self, context: context)
         try deleteAll(HabitLog.self, context: context)
         try deleteAll(WeightLossPlan.self, context: context)
@@ -232,7 +305,7 @@ enum BackupService {
         try deleteAll(GoalMilestone.self, context: context)
         try deleteAll(AppSettings.self, context: context)
 
-        envelope.habits.forEach { context.insert(Habit(id: $0.id, name: $0.name, days: $0.days, dailyGoal: $0.dailyGoal, unit: $0.unit, sortOrder: $0.sortOrder, isActive: $0.isActive, createdAt: $0.createdAt, updatedAt: $0.updatedAt)) }
+        envelope.habits.forEach { context.insert(Habit(id: $0.id, name: $0.name, days: $0.days, dailyGoal: $0.dailyGoal, unit: $0.unit, sortOrder: $0.sortOrder, isActive: $0.isActive, reminderMinutes: $0.reminderMinutes, createdAt: $0.createdAt, updatedAt: $0.updatedAt)) }
         envelope.habitLogs.forEach { context.insert(HabitLog(id: $0.id, habitID: $0.habitID, loggedFor: $0.loggedFor, value: $0.value, completed: $0.completed, createdAt: $0.createdAt, updatedAt: $0.updatedAt)) }
         envelope.weightPlans.forEach { context.insert(WeightLossPlan(id: $0.id, month: $0.month, startingWeight: $0.startingWeight, goalWeight: $0.goalWeight, createdAt: $0.createdAt, updatedAt: $0.updatedAt)) }
         envelope.weightLogs.forEach { context.insert(WeightLog(id: $0.id, loggedFor: $0.loggedFor, weight: $0.weight, rollingAverageWeight: $0.rollingAverageWeight, createdAt: $0.createdAt, updatedAt: $0.updatedAt)) }
@@ -242,6 +315,7 @@ enum BackupService {
             context.insert(AppSettings(id: settings.id, timelineStartDate: settings.timelineStartDate, timelineDeadlineDate: settings.timelineDeadlineDate))
         }
         try context.save()
+        HabitNotificationScheduler.syncAll(habits: try context.fetch(FetchDescriptor<Habit>()))
     }
 
     private static func deleteAll<T: PersistentModel>(_ type: T.Type, context: ModelContext) throws {

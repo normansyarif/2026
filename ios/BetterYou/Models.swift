@@ -51,6 +51,13 @@ enum Formatters {
         return formatter
     }()
 
+    static let shortTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter
+    }()
+
     static let isoDate: DateFormatter = {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -74,6 +81,7 @@ final class Habit {
     var unit: String
     var sortOrder: Int
     var isActive: Bool
+    var reminderMinutes: Int?
     var createdAt: Date
     var updatedAt: Date
 
@@ -85,6 +93,7 @@ final class Habit {
         unit: String,
         sortOrder: Int,
         isActive: Bool = true,
+        reminderMinutes: Int? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -95,6 +104,7 @@ final class Habit {
         self.unit = unit
         self.sortOrder = sortOrder
         self.isActive = isActive
+        self.reminderMinutes = reminderMinutes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -110,6 +120,29 @@ final class Habit {
 
     func goalReached(_ value: Double) -> Bool {
         value >= dailyGoal
+    }
+
+    var reminderTimeLabel: String {
+        guard let reminderMinutes else { return "All day" }
+        return Formatters.shortTime.string(from: Self.timeDate(from: reminderMinutes))
+    }
+
+    static func minutesAfterMidnight(from date: Date) -> Int {
+        let components = Calendar.app.dateComponents([.hour, .minute], from: date)
+        return ((components.hour ?? 0) * 60) + (components.minute ?? 0)
+    }
+
+    static func timeDate(from minutesAfterMidnight: Int) -> Date {
+        let clamped = min(max(minutesAfterMidnight, 0), 1439)
+        return Calendar.app.date(
+            from: DateComponents(
+                year: 2001,
+                month: 1,
+                day: 1,
+                hour: clamped / 60,
+                minute: clamped % 60
+            )
+        ) ?? Date()
     }
 }
 

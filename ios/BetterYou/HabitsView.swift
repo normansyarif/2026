@@ -20,7 +20,7 @@ struct HabitsView: View {
                             } label: {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(habit.name)
-                                    Text("\(Formatters.amount(habit.dailyGoal)) \(habit.unit) - \(habit.days.map { Weekday(rawValue: $0)?.shortLabel ?? $0 }.joined(separator: ", "))")
+                                    Text("\(Formatters.amount(habit.dailyGoal)) \(habit.unit) - \(habit.days.map { Weekday(rawValue: $0)?.shortLabel ?? $0 }.joined(separator: ", ")) - \(habit.reminderTimeLabel)")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -46,8 +46,8 @@ struct HabitsView: View {
                 }
             }
             .sheet(isPresented: $isShowingNewHabit) {
-                NewHabitSheet { name, dailyGoal, unit, days in
-                    addHabit(name: name, dailyGoal: dailyGoal, unit: unit, days: days)
+                NewHabitSheet { name, dailyGoal, unit, days, reminderMinutes in
+                    addHabit(name: name, dailyGoal: dailyGoal, unit: unit, days: days, reminderMinutes: reminderMinutes)
                     isShowingNewHabit = false
                 }
                 .presentationDetents([.medium, .large])
@@ -55,14 +55,17 @@ struct HabitsView: View {
         }
     }
 
-    private func addHabit(name: String, dailyGoal: Double, unit: String, days: [String]) {
-        modelContext.insert(Habit(name: name, days: days, dailyGoal: dailyGoal, unit: unit, sortOrder: (habits.map(\.sortOrder).max() ?? 0) + 1))
+    private func addHabit(name: String, dailyGoal: Double, unit: String, days: [String], reminderMinutes: Int?) {
+        let habit = Habit(name: name, days: days, dailyGoal: dailyGoal, unit: unit, sortOrder: (habits.map(\.sortOrder).max() ?? 0) + 1, reminderMinutes: reminderMinutes)
+        modelContext.insert(habit)
         try? modelContext.save()
+        HabitNotificationScheduler.sync(habit: habit)
     }
 
     private func deleteHabits(at offsets: IndexSet) {
         for index in offsets {
             let habit = habits[index]
+            HabitNotificationScheduler.remove(habitID: habit.id)
             logs.filter { $0.habitID == habit.id }.forEach(modelContext.delete)
             modelContext.delete(habit)
         }
@@ -80,13 +83,15 @@ struct HabitsView: View {
 }
 
 struct NewHabitSheet: View {
-    let onSave: (String, Double, String, [String]) -> Void
+    let onSave: (String, Double, String, [String], Int?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var unit = "count"
     @State private var dailyGoal = "1"
     @State private var selectedDays = Set(Weekday.allCases.map(\.rawValue))
+    @State private var hasReminder = false
+    @State private var reminderTime = Habit.timeDate(from: 9 * 60)
 
     var body: some View {
         NavigationStack {
@@ -100,6 +105,10 @@ struct NewHabitSheet: View {
 
                 Section("Schedule") {
                     weekdayPicker
+                    Toggle("Set time", isOn: $hasReminder)
+                    if hasReminder {
+                        DatePicker("Time", selection: $reminderTime, displayedComponents: [.hourAndMinute])
+                    }
                 }
 
                 if let validationMessage {
@@ -160,7 +169,8 @@ struct NewHabitSheet: View {
         else { return }
 
         let orderedDays = Weekday.allCases.map(\.rawValue).filter(selectedDays.contains)
-        onSave(name.trimmingCharacters(in: .whitespacesAndNewlines), goal, unit, orderedDays)
+        let reminderMinutes = hasReminder ? Habit.minutesAfterMidnight(from: reminderTime) : nil
+        onSave(name.trimmingCharacters(in: .whitespacesAndNewlines), goal, unit, orderedDays, reminderMinutes)
         dismiss()
     }
 }
@@ -169,6 +179,8 @@ struct HabitEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var habit: Habit
     @State private var selectedDays: Set<String> = []
+    @State private var hasReminder = false
+    @State private var reminderTime = Habit.timeDate(from: 9 * 60)
 
     var body: some View {
         Form {
@@ -191,11 +203,28 @@ struct HabitEditorView: View {
                         .toggleStyle(.button)
                     }
                 }
+                Toggle("Set time", isOn: $hasReminder)
+                if hasReminder {
+                    DatePicker("Time", selection: $reminderTime, displayedComponents: [.hourAndMinute])
+                }
             }
         }
         .navigationTitle("Edit Habit")
-        .onAppear { selectedDays = Set(habit.days) }
-        .onDisappear { try? modelContext.save() }
+        .onAppear(perform: loadReminder)
+        .onDisappear(perform: saveHabit)
+    }
+
+    private func loadReminder() {
+        selectedDays = Set(habit.days)
+        hasReminder = habit.reminderMinutes != nil
+        reminderTime = Habit.timeDate(from: habit.reminderMinutes ?? (9 * 60))
+    }
+
+    private func saveHabit() {
+        habit.reminderMinutes = hasReminder ? Habit.minutesAfterMidnight(from: reminderTime) : nil
+        habit.updatedAt = Date()
+        try? modelContext.save()
+        HabitNotificationScheduler.sync(habit: habit)
     }
 }
 
